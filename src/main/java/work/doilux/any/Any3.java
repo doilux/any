@@ -9,20 +9,17 @@ import java.util.function.Function;
  *
  * @param <T1> The type of the First value
  * @param <T2> The type of the Second value
- * @param <T3> The type of the Third value
+ * @param <R>  The type of the Third value
  */
-public class Any3<T1, T2, T3> {
+public class Any3<T1, T2, R> {
 
-    private final T1 t1;
+    private final Either<T1, T2> l;
 
-    private final T2 t2;
+    private final R r;
 
-    private final T3 t3;
-
-    private Any3(T1 t1, T2 t2, T3 t3) {
-        this.t1 = t1;
-        this.t2 = t2;
-        this.t3 = t3;
+    private Any3(Either<T1, T2> l, R r) {
+        this.l = l;
+        this.r = r;
     }
 
     /**
@@ -34,7 +31,7 @@ public class Any3<T1, T2, T3> {
      */
     public static <T1> Any3 first(T1 elem) {
         Objects.requireNonNull(elem, "elem is null");
-        return new Any3(elem, null, null);
+        return new Any3(Either.left(elem), null);
     }
 
     /**
@@ -46,7 +43,7 @@ public class Any3<T1, T2, T3> {
      */
     public static <T2> Any3 second(T2 elem) {
         Objects.requireNonNull(elem, "elem is null");
-        return new Any3(null, elem, null);
+        return new Any3(Either.right(elem), null);
     }
 
     /**
@@ -58,7 +55,7 @@ public class Any3<T1, T2, T3> {
      */
     public static <T3> Any3 third(T3 elem) {
         Objects.requireNonNull(elem, "elem is null");
-        return new Any3(null, null, elem);
+        return new Any3(null, elem);
     }
 
     /**
@@ -67,7 +64,7 @@ public class Any3<T1, T2, T3> {
      * @return true, if this is First, false otherwise
      */
     public boolean isFirst() {
-        return t1 != null;
+        return l != null && l.isLeft();
     }
 
     /**
@@ -76,7 +73,7 @@ public class Any3<T1, T2, T3> {
      * @return true, if this is Second, false otherwise
      */
     public boolean isSecond() {
-        return t2 != null;
+        return l != null && l.isRight();
     }
 
     /**
@@ -85,7 +82,7 @@ public class Any3<T1, T2, T3> {
      * @return true, if this is Third, false otherwise
      */
     public boolean isThird() {
-        return t3 != null;
+        return r != null;
     }
 
     /**
@@ -102,7 +99,7 @@ public class Any3<T1, T2, T3> {
     public <R1, R2, R3> Any3<R1, R2, R3> bimap(
             Function<T1, R1> f1,
             Function<T2, R2> f2,
-            Function<T3, R3> f3
+            Function<R, R3> f3
     ) {
         Objects.requireNonNull(f1, "f1 is null");
         Objects.requireNonNull(f2, "f2 is null");
@@ -110,25 +107,26 @@ public class Any3<T1, T2, T3> {
         return mapFirst(f1).mapSecond(f2).mapThird(f3);
     }
 
-    private <R> Any3<R, T2, T3> mapFirst(Function<T1, R> f) {
+    private <U> Any3<U, T2, R> mapFirst(Function<T1, U> f) {
         Objects.requireNonNull(f, "f is null");
-        return t1 == null ?
-                new Any3<R, T2, T3>((R) t1, t2, t3) :
-                new Any3<R, T2, T3>(f.apply(t1), t2, t3);
+        return l == null ?
+                new Any3<>((Either<U, T2>) l, r) :
+                new Any3<>(l.mapLeft(f), r);
     }
 
-    private <R> Any3<T1, R, T3> mapSecond(Function<T2, R> f) {
+    private <U> Any3<T1, U, R> mapSecond(Function<T2, U> f) {
         Objects.requireNonNull(f, "f is null");
-        return t2 == null ?
-                new Any3<T1, R, T3>(t1, (R) t2, t3) :
-                new Any3<T1, R, T3>(t1, f.apply(t2), t3);
+        Objects.requireNonNull(f, "f is null");
+        return l == null ?
+                new Any3<>((Either<T1, U>) l, r) :
+                new Any3<>(l.mapRight(f), r);
     }
 
-    private <R> Any3<T1, T2, R> mapThird(Function<T3, R> f) {
+    private <U> Any3<T1, T2, U> mapThird(Function<R, U> f) {
         Objects.requireNonNull(f, "f is null");
-        return t3 == null ?
-                new Any3<T1, T2, R>(t1, t2, (R) t3) :
-                new Any3<T1, T2, R>(t1, t2, f.apply(t3));
+        return r == null ?
+                new Any3<>(l, (U) r) :
+                new Any3<>(l, f.apply(r));
     }
 
 
@@ -140,23 +138,16 @@ public class Any3<T1, T2, T3> {
      * @param f3 An action which takes a third value
      * @return this instance
      */
-    public Any3<T1, T2, T3> peek(
+    public Any3<T1, T2, R> peek(
             Consumer<T1> f1,
             Consumer<T2> f2,
-            Consumer<T3> f3
+            Consumer<R> f3
 
     ) {
         Objects.requireNonNull(f1, "f1 is null");
         Objects.requireNonNull(f2, "f2 is null");
         Objects.requireNonNull(f3, "f3 is null");
-        if (isFirst()) {
-            forEachFirst(f1);
-        } else if (isSecond()) {
-            forEachSecond(f2);
-        } else if (isThird()) {
-            forEachThird(f3);
-        }
-
+        forEach(f1, f2, f3);
         return this;
     }
 
@@ -170,28 +161,29 @@ public class Any3<T1, T2, T3> {
     public void forEach(
             Consumer<T1> f1,
             Consumer<T2> f2,
-            Consumer<T3> f3
+            Consumer<R> f3
 
     ) {
         Objects.requireNonNull(f1, "f1 is null");
         Objects.requireNonNull(f2, "f2 is null");
         Objects.requireNonNull(f3, "f3 is null");
-        peek(f1, f2, f3);
+        forEachLeft(f1, f2);
+        forEachRight(f3);
     }
 
-    private void forEachFirst(Consumer<T1> f) {
-        Objects.requireNonNull(f, "f is null");
-        f.accept(t1);
+    private void forEachLeft(Consumer<T1> f1, Consumer<T2> f2) {
+        Objects.requireNonNull(f1, "f1 is null");
+        Objects.requireNonNull(f1, "f2 is null");
+        if (l != null) {
+            l.forEach(f1, f2);
+        }
     }
 
-    private void forEachSecond(Consumer<T2> f) {
+    private void forEachRight(Consumer<R> f) {
         Objects.requireNonNull(f, "f is null");
-        f.accept(t2);
-    }
-
-    private void forEachThird(Consumer<T3> f) {
-        Objects.requireNonNull(f, "f is null");
-        f.accept(t3);
+        if (r != null) {
+            f.accept(r);
+        }
     }
 
 
@@ -207,21 +199,18 @@ public class Any3<T1, T2, T3> {
     public <U> U fold(
             Function<T1, U> f1,
             Function<T2, U> f2,
-            Function<T3, U> f3
+            Function<R, U> f3
     ) {
         Objects.requireNonNull(f1, "f1 is null");
         Objects.requireNonNull(f2, "f2 is null");
         Objects.requireNonNull(f3, "f3 is null");
-        if (isFirst()) {
-            return f1.apply(t1);
-        } else if (isSecond()) {
-            return f2.apply(t2);
+        if (isFirst() || isSecond()) {
+            return l.fold(f1, f2);
         } else if (isThird()) {
-            return f3.apply(t3);
+            return f3.apply(r);
         }
         throw new IllegalStateException("all values are null");
     }
-
 
     @Override
     public boolean equals(Object o) {
@@ -230,26 +219,24 @@ public class Any3<T1, T2, T3> {
 
         Any3<?, ?, ?> any3 = (Any3<?, ?, ?>) o;
 
-        if (t1 != null ? !t1.equals(any3.t1) : any3.t1 != null) return false;
-        if (t2 != null ? !t2.equals(any3.t2) : any3.t2 != null) return false;
-        return t3 != null ? t3.equals(any3.t3) : any3.t3 == null;
+        if (l != null ? !l.equals(any3.l) : any3.l != null) return false;
+        return r != null ? r.equals(any3.r) : any3.r == null;
     }
 
     @Override
     public int hashCode() {
-        int result = t1 != null ? t1.hashCode() : 0;
-        result = 31 * result + (t2 != null ? t2.hashCode() : 0);
-        result = 31 * result + (t3 != null ? t3.hashCode() : 0);
+        int result = l != null ? l.hashCode() : 0;
+        result = 31 * result + (r != null ? r.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
         return "Any3{" +
-                "t1=" + t1 +
-                ", t2=" + t2 +
-                ", t3=" + t3 +
+                "l=" + l +
+                ", r=" + r +
                 '}';
     }
+
 }
 

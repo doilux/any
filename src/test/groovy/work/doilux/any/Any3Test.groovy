@@ -2,7 +2,6 @@ package work.doilux.any
 
 import spock.lang.Specification
 import spock.lang.Unroll
-import work.doilux.any.Any3
 
 import java.util.function.Consumer
 import java.util.function.Function
