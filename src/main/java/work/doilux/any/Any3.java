@@ -1,4 +1,4 @@
-package com.doilux.any;
+package work.doilux.any;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -113,22 +113,22 @@ public class Any3<T1, T2, T3> {
     private <R> Any3<R, T2, T3> mapFirst(Function<T1, R> f) {
         Objects.requireNonNull(f, "f is null");
         return t1 == null ?
-                new Any3<>((R) t1, t2, t3) :
-                new Any3<>(f.apply(t1), t2, t3);
+                new Any3<R, T2, T3>((R) t1, t2, t3) :
+                new Any3<R, T2, T3>(f.apply(t1), t2, t3);
     }
 
     private <R> Any3<T1, R, T3> mapSecond(Function<T2, R> f) {
         Objects.requireNonNull(f, "f is null");
         return t2 == null ?
-                new Any3<>(t1, (R) t2, t3) :
-                new Any3<>(t1, f.apply(t2), t3);
+                new Any3<T1, R, T3>(t1, (R) t2, t3) :
+                new Any3<T1, R, T3>(t1, f.apply(t2), t3);
     }
 
     private <R> Any3<T1, T2, R> mapThird(Function<T3, R> f) {
         Objects.requireNonNull(f, "f is null");
         return t3 == null ?
-                new Any3<>(t1, t2, (R) t3) :
-                new Any3<>(t1, t2, f.apply(t3));
+                new Any3<T1, T2, R>(t1, t2, (R) t3) :
+                new Any3<T1, T2, R>(t1, t2, f.apply(t3));
     }
 
 
