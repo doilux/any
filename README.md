@@ -8,13 +8,20 @@ This is Java class for express "One of Several" state.
 See [Any3Sample.groovy](https://github.com/doilux/any/blob/master/src/test/java/com/doilux/any/Any3Sample.groovy)
 
 ## Usage
+edit build.gradle
 
-* Clone this repository
-* Build by gradle
-    ```$xslt
-    ./gradlew clean build
-    ```
-* Add jar(./build/libs/any.jar) file to classpath
+### example
+```$xslt
+repositories {
+    maven {
+        url 'https://doilux.github.io/any/'
+    }
+}
+
+dependencies {
+    compile "work.doilux:any:1.0.0"
+}
+```
 
 ## Licence
 
